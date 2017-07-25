@@ -180,8 +180,9 @@ class AuditServiceMixin(object):
     def prepare_audit(self):
         self.audit = {
             "id": self.auction_doc_id,
-            "tenderId": self._auction_data["data"].get("tenderID", ""),
-            "tender_id": self.tender_id,
+            "auctionId": self._auction_data["data"].get("auctionID", ""),
+            "auction_id": self.tender_id,
+            "items": self._auction_data["data"].get("items", []),
             "timeline": {
                 "auction_start": {
                     "initial_bids": []
@@ -226,7 +227,8 @@ class AuditServiceMixin(object):
                 'time': bid['time']
             }
             if approved:
-                bid_result_audit["identification"] = approved[bid['bidder_id']]
+                bid_result_audit["identification"] = approved[bid['bidder_id']].get('tenderers', [])
+                bid_result_audit["owner"] = approved[bid['bidder_id']].get('owner', '')
             self.audit['timeline']['results']['bids'].append(bid_result_audit)
 
     def upload_audit_file_with_document_service(self, doc_id=None):
@@ -246,7 +248,7 @@ class AuditServiceMixin(object):
             path = self.tender_url + '/documents'
 
         response = make_request(path, data=ds_response,
-                                user=self.worker_defaults["TENDERS_API_TOKEN"],
+                                user=self.worker_defaults["resource_api_token"],
                                 method=method, request_id=self.request_id, session=self.session,
                                 retry_count=2
                                 )
@@ -275,7 +277,7 @@ class AuditServiceMixin(object):
             path = self.tender_url + '/documents'
 
         response = make_request(path, files=files,
-                                user=self.worker_defaults["TENDERS_API_TOKEN"],
+                                user=self.worker_defaults["resource_api_token"],
                                 method=method, request_id=self.request_id, session=self.session,
                                 retry_count=2
                                 )

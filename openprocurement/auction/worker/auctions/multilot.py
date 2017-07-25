@@ -35,7 +35,7 @@ def get_auction_info(self, prepare=False):
             self._auction_data = {'data': {}}
         auction_data = get_tender_data(
             self.tender_url + '/auction',
-            user=self.worker_defaults['TENDERS_API_TOKEN'],
+            user=self.worker_defaults['resource_api_token'],
             request_id=self.request_id,
             session=self.session
         )
@@ -82,7 +82,8 @@ def get_auction_info(self, prepare=False):
                         bid_data = {
                             'id': bid['id'],
                             'date': lot_bid['date'],
-                            'value': lot_bid['value']
+                            'value': lot_bid['value'],
+                            'owner': bid.get('owner', '')
                         }
                         if 'parameters' in bid:
                             bid_data['parameters'] = [i for i in bid['parameters']
@@ -116,9 +117,9 @@ def prepare_auction_document(self):
     self.auction_document.update(
         {'_id': self.auction_doc_id,
          'stages': [],
-         'tenderID': self._auction_data['data'].get('tenderID', ''),
+         'auctionID': self._auction_data['data'].get('auctionID', ''),
          'procurementMethodType': self._auction_data['data'].get('procurementMethodType', ''),
-         'TENDERS_API_VERSION': self.worker_defaults['TENDERS_API_VERSION'],
+         'TENDERS_API_VERSION': self.worker_defaults['resource_api_version'],
          'initial_bids': [],
          'current_stage': -1,
          'results': [],
@@ -178,22 +179,28 @@ def prepare_auction_and_participation_urls(self):
                        "MESSAGE_ID": AUCTION_WORKER_SET_AUCTION_URLS})
     logger.info(repr(patch_data))
     make_request(self.tender_url + '/auction/{}'.format(self.lot_id), patch_data,
-                 user=self.worker_defaults["TENDERS_API_TOKEN"],
+                 user=self.worker_defaults["resource_api_token"],
                  request_id=self.request_id, session=self.session)
     return patch_data
 
 
 def post_results_data(self, with_auctions_results=True):
+    all_bids = self.auction_document["results"]
     patch_data = {'data': {'bids': list(self._auction_data['data']['bids'])}}
-    if with_auctions_results:
-        for bid_index, bid in enumerate(self._auction_data['data']['bids']):
-            if bid.get('status', 'active') == 'active':
-                for lot_index, lot_bid in enumerate(bid['lotValues']):
-                    if lot_bid['relatedLot'] == self.lot_id and lot_bid.get('status', 'active') == 'active':
-                        auction_bid_info = get_latest_bid_for_bidder(self.auction_document["results"], bid["id"])
-                        patch_data['data']['bids'][bid_index]['lotValues'][lot_index]["value"]["amount"] = auction_bid_info["amount"]
-                        patch_data['data']['bids'][bid_index]['lotValues'][lot_index]["date"] = auction_bid_info["time"]
-                        break
+    for bid_index, bid in enumerate(self._auction_data['data']['bids']):
+        if bid.get('status', 'active') == 'active':
+            for lot_index, lot_bid in enumerate(bid['lotValues']):
+                if lot_bid['relatedLot'] == self.lot_id and lot_bid.get('status', 'active') == 'active':
+                    auction_bid_info = get_latest_bid_for_bidder(all_bids, bid["id"])
+                    patch_data['data']['bids'][bid_index]['lotValues'][lot_index]["value"]["amount"] = auction_bid_info["amount"]
+                    patch_data['data']['bids'][bid_index]['lotValues'][lot_index]["date"] = auction_bid_info["time"]
+                    break
+
+    logger.info(
+        "Approved data: {}".format(patch_data),
+        extra={"JOURNAL_REQUEST_ID": self.request_id,
+               "MESSAGE_ID": AUCTION_WORKER_API_APPROVED_DATA}
+    )
 
     logger.info(
         "Approved data: {}".format(patch_data),
@@ -202,7 +209,7 @@ def post_results_data(self, with_auctions_results=True):
     )
     results = make_request(
         self.tender_url + '/auction/{}'.format(self.lot_id), data=patch_data,
-        user=self.worker_defaults["TENDERS_API_TOKEN"],
+        user=self.worker_defaults["resource_api_token"],
         method='post',
         request_id=self.request_id, session=self.session
     )
@@ -233,9 +240,9 @@ def announce_results_data(self, results=None):
     for section in ['initial_bids', 'stages', 'results']:
         for index, stage in enumerate(self.auction_document[section]):
             if 'bidder_id' in stage and stage['bidder_id'] in bidders_data:
-                self.auction_document[section][index]["label"]["uk"] = bidders_data[stage['bidder_id']]["name"]
-                self.auction_document[section][index]["label"]["ru"] = bidders_data[stage['bidder_id']]["name"]
-                self.auction_document[section][index]["label"]["en"] = bidders_data[stage['bidder_id']]["name"]
+                self.auction_document[section][index]["label"]["uk"] = bidders_data[stage['bidder_id']]['tenderers'][0]['name']
+                self.auction_document[section][index]["label"]["ru"] = bidders_data[stage['bidder_id']]['tenderers'][0]['name']
+                self.auction_document[section][index]["label"]["en"] = bidders_data[stage['bidder_id']]['tenderers'][0]['name']
     self.auction_document["current_stage"] = (len(self.auction_document["stages"]) - 1)
 
-    return None
+    return bidders_data
