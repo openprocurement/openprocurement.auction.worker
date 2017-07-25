@@ -219,7 +219,7 @@ def kickclient():
 
 
 def run_server(auction, mapping_expire_time, logger,
-               timezone='Europe/Kiev', bids_form=BidsForm, form_handler=form_handler, cookie_path='tenders'):
+               timezone='Europe/Kiev', bids_form=BidsForm, form_handler=form_handler, cookie_path='auctions'):
     app.config.update(auction.worker_defaults)
     # Replace Flask custom logger
     app.logger_name = logger.name

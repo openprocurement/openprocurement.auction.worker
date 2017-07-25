@@ -69,9 +69,11 @@ class Auction(DBServiceMixin,
         else:
             self.auction_doc_id = tender_id
         self.tender_url = urljoin(
-            worker_defaults["TENDERS_API_URL"],
-            '/api/{0}/tenders/{1}'.format(
-                worker_defaults["TENDERS_API_VERSION"], tender_id
+            worker_defaults["resource_api_server"],
+            '/api/{0}/{1}/{2}'.format(
+                worker_defaults["resource_api_version"],
+                worker_defaults["resource_name"],
+                tender_id
             )
         )
         if auction_data:
