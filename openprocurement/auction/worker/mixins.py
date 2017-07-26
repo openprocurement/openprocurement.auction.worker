@@ -127,7 +127,7 @@ class DBServiceMixin(object):
 
         self.auction_document = {}
         if public_document:
-            self.auction_document = {"_rev": public_document["_rev"]}
+            self.auction_document = {"_rev": public_document["_rev"], "phase": "dutch"}
         if self.debug:
             self.auction_document['mode'] = 'test'
             self.auction_document['test_auction_data'] = deepcopy(self._auction_data)
