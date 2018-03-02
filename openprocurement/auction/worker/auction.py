@@ -34,7 +34,7 @@ from openprocurement.auction.worker.mixins import\
     DateTimeServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin,\
     StagesServiceMixin, ROUNDS, TIMEZONE
 from openprocurement.auction.worker.utils import \
-    prepare_initial_bid_stage, prepare_results_stage
+    prepare_initial_bid_stage, prepare_results_stage, init_services
 from openprocurement.auction.worker.auctions import\
     simple
 from openprocurement.auction.utils import\
@@ -70,29 +70,18 @@ class Auction(DBServiceMixin,
             self.auction_doc_id = tender_id + "_" + lot_id
         else:
             self.auction_doc_id = tender_id
-        self.tender_url = urljoin(
-            worker_defaults["resource_api_server"],
-            '/api/{0}/{1}/{2}'.format(
-                worker_defaults["resource_api_version"],
-                worker_defaults["resource_name"],
-                tender_id
-            )
-        )
         if auction_data:
             self.debug = True
             LOGGER.setLevel(logging.DEBUG)
             self._auction_data = auction_data
         else:
             self.debug = False
+        self.worker_defaults = worker_defaults
+        init_services(self)
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
-        self.worker_defaults = worker_defaults
-        if self.worker_defaults.get('with_document_service', False):
-            self.session_ds = RequestsSession()
         self._bids_data = {}
-        self.db = Database(str(self.worker_defaults["COUCH_DATABASE"]),
-                           session=Session(retry_delays=range(10)))
         self.audit = {}
         self.retries = 10
         self.bidders_count = 0
