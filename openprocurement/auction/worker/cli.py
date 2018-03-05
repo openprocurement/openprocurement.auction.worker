@@ -57,7 +57,7 @@ def main():
                       auction_data=auction_data,
                       lot_id=args.lot)
     if args.cmd == 'check':
-        exit()
+        sys.exit()
     if args.cmd == 'run':
         SCHEDULER.start()
         auction.schedule_auction()
