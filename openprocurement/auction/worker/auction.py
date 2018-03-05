@@ -1,18 +1,15 @@
 import logging
 
 from copy import deepcopy
-from urlparse import urljoin
 from datetime import datetime
-from couchdb import Database, Session, Server
 
 from gevent import sleep
 from gevent.event import Event
 from gevent.lock import BoundedSemaphore
 
 from yaml import safe_dump as yaml_dump
-from requests import Session as RequestsSession, request
+from requests import Session as RequestsSession
 from dateutil.tz import tzlocal
-from dateutil import parser
 from barbecue import cooking
 from apscheduler.schedulers.gevent import GeventScheduler
 
@@ -29,17 +26,15 @@ from openprocurement.auction.worker.journal import (
 )
 from openprocurement.auction.worker.server import run_server
 from openprocurement.auction.executor import AuctionsExecutor
-from openprocurement.auction.worker.mixins import\
-    DBServiceMixin, RequestIDServiceMixin, AuditServiceMixin,\
-    DateTimeServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin,\
-    StagesServiceMixin, ROUNDS, TIMEZONE
+from openprocurement.auction.worker.mixins import \
+    DBServiceMixin, RequestIDServiceMixin, AuditServiceMixin, \
+    DateTimeServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin, \
+    StagesServiceMixin, ROUNDS, TIMEZONE, InitializeServiceMixin
 from openprocurement.auction.worker.utils import \
     prepare_initial_bid_stage, prepare_results_stage
-from openprocurement.auction.worker.auctions import\
-    simple
 from openprocurement.auction.utils import (
     get_latest_bid_for_bidder, sorting_by_amount,
-    sorting_start_bids_by_amount, delete_mapping, get_tender_data, make_request
+    sorting_start_bids_by_amount, delete_mapping, get_tender_data
 )
 
 logging.addLevelName(25, 'CHECK')
@@ -67,6 +62,7 @@ SCHEDULER.timezone = TIMEZONE
 
 class Auction(DBServiceMixin,
               RequestIDServiceMixin,
+              InitializeServiceMixin,
               AuditServiceMixin,
               BiddersServiceMixin,
               DateTimeServiceMixin,
@@ -380,64 +376,3 @@ class Auction(DBServiceMixin,
             self.upload_audit_file_with_document_service()
         else:
             self.upload_audit_file_without_document_service()
-
-    def init_services(self):
-        exceptions = []
-
-        init_methods = [(self.init_api, 'API'), (self.init_database, 'CouchDB')]
-        if self.worker_defaults.get("with_document_service"):
-            init_methods.append((self.init_ds, 'Document Service'))
-
-        # Checking Worker services
-        for method, service in init_methods:
-            result = ('ok', None)
-            try:
-                method()
-            except Exception as e:
-                exceptions.append(e)
-                result = ('failed', e)
-            LOGGER.check('{} - {}'.format(service, result[0]), result[1])
-
-        if exceptions:
-            raise exceptions[0]
-
-    def init_api(self):
-        """
-        Check API availability and set tender_url attribute
-        """
-        api_url = "{resource_api_server}/api/{resource_api_version}/health"
-        if self.debug:
-            response = True
-        else:
-            response = make_request(url=api_url.format(**self.worker_defaults),
-                                    method="get", retry_count=5)
-        if not response:
-            raise Exception("Auction DS can't be reached")
-        else:
-            self.tender_url = urljoin(
-                self.worker_defaults["resource_api_server"],
-                "/api/{0}/{1}/{2}".format(
-                    self.worker_defaults["resource_api_version"],
-                    self.worker_defaults["resource_name"],
-                    self.tender_id
-                )
-            )
-
-    def init_ds(self):
-        """
-        Check Document service availability and set session_ds attribute
-        """
-        ds_config = self.worker_defaults.get("DOCUMENT_SERVICE")
-        resp = request("GET", ds_config.get("url"), timeout=5)
-        if not resp or resp.status_code != 200:
-            raise Exception("Auction DS can't be reached")
-        self.session_ds = RequestsSession()
-
-    def init_database(self):
-        """
-        Check CouchDB availability and set db attribute
-        """
-        server, db = self.worker_defaults.get("COUCH_DATABASE").rsplit('/', 1)
-        server = Server(server, session=Session(retry_delays=range(10)))
-        database = server[db] if db in server else server.create(db)
-        self.db = database

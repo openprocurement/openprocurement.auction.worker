@@ -1,9 +1,13 @@
 import logging
 import json
+from urlparse import urljoin
+
 import iso8601
+from couchdb import Server, Session
 from datetime import datetime, timedelta
 from copy import deepcopy
 from dateutil.tz import tzlocal
+from requests import request
 from yaml import safe_dump as yaml_dump
 from couchdb.http import HTTPError, RETRYABLE_ERRORS
 from fractions import Fraction
@@ -648,3 +652,67 @@ class StagesServiceMixin(object):
             extra={"JOURNAL_REQUEST_ID": self.request_id,
                    "MESSAGE_ID": AUCTION_WORKER_SERVICE_START_NEXT_STAGE}
         )
+
+
+class InitializeServiceMixin(object):
+
+    def init_services(self):
+        exceptions = []
+
+        init_methods = [(self.init_api, 'API'), (self.init_database, 'CouchDB')]
+        if self.worker_defaults.get("with_document_service"):
+            init_methods.append((self.init_ds, 'Document Service'))
+
+        # Checking Worker services
+        for method, service in init_methods:
+            result = ('ok', None)
+            try:
+                method()
+            except Exception as e:
+                exceptions.append(e)
+                result = ('failed', e)
+            LOGGER.check('{} - {}'.format(service, result[0]), result[1])
+
+        if exceptions:
+            raise exceptions[0]
+
+    def init_api(self):
+        """
+        Check API availability and set tender_url attribute
+        """
+        api_url = "{resource_api_server}/api/{resource_api_version}/health"
+        if self.debug:
+            response = True
+        else:
+            response = make_request(url=api_url.format(**self.worker_defaults),
+                                    method="get", retry_count=5)
+        if not response:
+            raise Exception("Auction DS can't be reached")
+        else:
+            self.tender_url = urljoin(
+                self.worker_defaults["resource_api_server"],
+                "/api/{0}/{1}/{2}".format(
+                    self.worker_defaults["resource_api_version"],
+                    self.worker_defaults["resource_name"],
+                    self.tender_id
+                )
+            )
+
+    def init_ds(self):
+        """
+        Check Document service availability and set session_ds attribute
+        """
+        ds_config = self.worker_defaults.get("DOCUMENT_SERVICE")
+        resp = request("GET", ds_config.get("url"), timeout=5)
+        if not resp or resp.status_code != 200:
+            raise Exception("Auction DS can't be reached")
+        self.session_ds = RequestsSession()
+
+    def init_database(self):
+        """
+        Check CouchDB availability and set db attribute
+        """
+        server, db = self.worker_defaults.get("COUCH_DATABASE").rsplit('/', 1)
+        server = Server(server, session=Session(retry_delays=range(10)))
+        database = server[db] if db in server else server.create(db)
+        self.db = database
