@@ -1,18 +1,18 @@
-import logging
 import json
+import logging
+from copy import deepcopy
+from datetime import datetime, timedelta
+from fractions import Fraction
 from urlparse import urljoin
 
 import iso8601
 from couchdb import Server, Session
-from datetime import datetime, timedelta
-from copy import deepcopy
+from couchdb.http import HTTPError, RETRYABLE_ERRORS
 from dateutil.tz import tzlocal
 from requests import request, Session as RequestsSession
 from yaml import safe_dump as yaml_dump
-from couchdb.http import HTTPError, RETRYABLE_ERRORS
-from fractions import Fraction
-from barbecue import cooking
 
+from barbecue import cooking
 from openprocurement.auction.utils import\
     filter_amount, generate_request_id, make_request,\
     get_latest_bid_for_bidder, sorting_by_amount,\

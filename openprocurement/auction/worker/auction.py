@@ -33,24 +33,11 @@ from openprocurement.auction.worker.mixins import \
 from openprocurement.auction.worker.utils import \
     prepare_initial_bid_stage, prepare_results_stage
 from openprocurement.auction.utils import (
-    get_latest_bid_for_bidder, sorting_by_amount,
+    get_latest_bid_for_bidder, sorting_by_amount, check,
     sorting_start_bids_by_amount, delete_mapping, get_tender_data
 )
 
 logging.addLevelName(25, 'CHECK')
-
-
-def check(self, msg, exc=None, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'CHECK'.
-
-    If exc parameter is not None, will log exc message with severity 'ERROR'.
-    """
-    self.log(25, msg)
-    if exc:
-        self.error(exc, exc_info=True)
-
-
 logging.Logger.check = check
 
 LOGGER = logging.getLogger('Auction Worker')
