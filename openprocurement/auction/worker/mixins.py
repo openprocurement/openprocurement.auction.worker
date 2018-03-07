@@ -7,7 +7,7 @@ from couchdb import Server, Session
 from datetime import datetime, timedelta
 from copy import deepcopy
 from dateutil.tz import tzlocal
-from requests import request
+from requests import request, Session as RequestsSession
 from yaml import safe_dump as yaml_dump
 from couchdb.http import HTTPError, RETRYABLE_ERRORS
 from fractions import Fraction
@@ -687,7 +687,7 @@ class InitializeServiceMixin(object):
             response = make_request(url=api_url.format(**self.worker_defaults),
                                     method="get", retry_count=5)
         if not response:
-            raise Exception("Auction DS can't be reached")
+            raise Exception("API can't be reached")
         else:
             self.tender_url = urljoin(
                 self.worker_defaults["resource_api_server"],
@@ -703,9 +703,7 @@ class InitializeServiceMixin(object):
         Check Document service availability and set session_ds attribute
         """
         ds_config = self.worker_defaults.get("DOCUMENT_SERVICE")
-        resp = request("GET", ds_config.get("url"), timeout=5)
-        if not resp or resp.status_code != 200:
-            raise Exception("Auction DS can't be reached")
+        request("GET", ds_config.get("url"), timeout=5)
         self.session_ds = RequestsSession()
 
     def init_database(self):
