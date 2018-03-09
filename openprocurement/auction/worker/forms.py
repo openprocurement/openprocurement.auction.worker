@@ -7,7 +7,7 @@ from fractions import Fraction
 from datetime import datetime
 from pytz import timezone
 import wtforms_json
-
+import decimal
 from openprocurement.auction.utils import prepare_extra_journal_fields
 
 wtforms_json.init()
@@ -34,8 +34,11 @@ def validate_bid_change_on_bidding(form, field):
             raise ValidationError(u'Too high value')
     else:
         minimal_bid = form.document['stages'][stage_id]['amount']
-        if field.data > (minimal_bid - form.document['minimalStep']['amount']):
-            raise ValidationError(u'Too high value')
+        with decimal.localcontext() as ctx:
+            ctx.prec = 2
+            max_allowed_bid = decimal.Decimal(minimal_bid) - decimal.Decimal(form.document['minimalStep']['amount'])
+            if field.data is not None and decimal.Decimal(field.data).normalize() > max_allowed_bid:
+                raise ValidationError(u'Too high value')
 
 
 def validate_bidder_id_on_bidding(form, field):

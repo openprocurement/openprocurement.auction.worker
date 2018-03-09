@@ -6,8 +6,9 @@ from openprocurement.auction.worker.tests.data.data import (
     test_auction_document
 )
 from openprocurement.auction.worker.forms import (
-    validate_bid_value, BidsForm, form_handler
+    validate_bid_value, BidsForm, form_handler, validate_bid_change_on_bidding
 )
+from copy import deepcopy
 
 
 def test_validate_bid_value():
@@ -30,6 +31,28 @@ def test_validate_bid_value():
 
     field.data = 0.000001
     validate_bid_value(None, field)
+
+
+def test_bid_change_float_precision_issue(auction):
+    """
+    checks the fix of the issue CBD-1723
+    """
+    form = BidsForm()
+    form.auction = auction
+    form.document = deepcopy(test_auction_document)
+    form.document['minimalStep']['amount'] = 72.03
+    form.document['stages'][-1]['amount'] = 14395.71
+
+    field = form.bid
+    field.data = 14323.68
+
+    try:
+        validate_bid_change_on_bidding(form, form.bid)
+    except ValidationError:
+        pytest.fail("Unexpected ValidationError: {} - {} = {}".format(
+            form.document['stages'][-1]['amount'],
+            form.document['minimalStep']['amount'],
+            field.data))
 
 
 def test_bids_form(auction, features_auction):
