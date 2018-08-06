@@ -18,7 +18,8 @@ from openprocurement.auction.worker.auctions import\
     simple, multilot
 from openprocurement.auction.worker.utils import prepare_bids_stage,\
     prepare_initial_bid_stage, prepare_results_stage
-from openprocurement.auction.worker.constants import ROUNDS, TIMEZONE, BIDS_SECONDS,\
+from openprocurement.auction.worker_core.constants import ROUNDS
+from openprocurement.auction.worker.constants import BIDS_SECONDS,\
     FIRST_PAUSE_SECONDS, PAUSE_SECONDS, BIDS_KEYS_FOR_COPY
 from openprocurement.auction.worker.journal import (
     AUCTION_WORKER_DB_GET_DOC,
