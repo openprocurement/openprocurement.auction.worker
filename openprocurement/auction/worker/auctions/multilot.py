@@ -7,7 +7,7 @@ from openprocurement.auction.utils import (
     calculate_hash,
     make_request
 )
-from openprocurement.auction.worker.utils import prepare_service_stage
+from openprocurement.auction.worker_core.utils import prepare_service_stage
 from openprocurement.auction.worker.journal import(
     AUCTION_WORKER_API_AUCTION_CANCEL,
     AUCTION_WORKER_API_AUCTION_NOT_EXIST,
