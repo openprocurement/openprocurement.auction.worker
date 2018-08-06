@@ -5,11 +5,8 @@ from urlparse import urljoin
 import iso8601
 from dateutil.tz import tzlocal
 
-from gevent.pywsgi import WSGIServer, WSGIHandler
-from gevent import socket
-import errno
+from gevent.pywsgi import WSGIServer
 from datetime import datetime, timedelta
-from pytz import timezone
 from openprocurement.auction.worker.forms import BidsForm, form_handler
 from openprocurement.auction.helpers.system import get_lisener
 from openprocurement.auction.utils import create_mapping,\
@@ -17,6 +14,10 @@ from openprocurement.auction.utils import create_mapping,\
 from openprocurement.auction.event_source import (
     sse, send_event, send_event_to_client, remove_client,
     push_timestamps_events, check_clients
+)
+from openprocurement.auction.worker_core.server import (
+    _LoggerStream,
+    AuctionsWSGIHandler
 )
 
 from pytz import timezone as tz
@@ -30,44 +31,6 @@ app.secret_key = os.urandom(24)
 app.logins_cache = {}
 
 INVALIDATE_GRANT = timedelta(0, 230)
-
-
-class _LoggerStream(object):
-    """
-    Logging workaround for Gevent PyWSGI Server
-    """
-    def __init__(self, logger):
-        super(_LoggerStream, self).__init__()
-        self.logger = logger
-
-    def write(self, msg, **kw):
-        self.logger.info(msg, **kw)
-
-
-class AuctionsWSGIHandler(WSGIHandler):
-
-    def run_application(self):
-        try:
-            return super(AuctionsWSGIHandler, self).run_application()
-        except socket.error as ex:
-            if ex.args[0] in (errno.EPIPE, errno.ECONNRESET):
-                self.close_connection = True
-            else:
-                raise ex
-
-    def log_request(self):
-        log = self.server.log
-        if log:
-            extra = prepare_extra_journal_fields(self.headers)
-            real_ip = self.environ.get('HTTP_X_REAL_IP', '')
-            if real_ip.startswith('172.'):
-                real_ip = ''
-            extra['JOURNAL_REMOTE_ADDR'] = ','.join(
-                [self.environ.get('HTTP_X_FORWARDED_FOR', ''), real_ip]
-            )
-            extra['JOURNAL_USER_AGENT'] = self.environ.get('HTTP_USER_AGENT', '')
-
-            log.write(self.format_request(), extra=extra)
 
 
 @app.route('/login')
