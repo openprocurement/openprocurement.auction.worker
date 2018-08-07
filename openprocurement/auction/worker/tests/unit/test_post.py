@@ -1,7 +1,7 @@
 from copy import deepcopy
 from requests import Session
 
-from openprocurement.auction.worker_core.mixins import AuditServiceMixin
+from openprocurement.auction.worker.mixins import WorkerAuditServiceMixin as AuditServiceMixin
 from openprocurement.auction.worker.tests.data.data import (
     tender_data, test_organization, lot_tender_data
 )
