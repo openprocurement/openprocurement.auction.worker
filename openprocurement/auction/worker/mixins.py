@@ -18,9 +18,9 @@ from openprocurement.auction.worker.auctions import\
     simple, multilot
 from openprocurement.auction.worker.utils import prepare_bids_stage,\
     prepare_initial_bid_stage, prepare_results_stage
-from openprocurement.auction.worker_core.constants import ROUNDS
+from openprocurement.auction.worker_core.mixins import AuditServiceMixin
 from openprocurement.auction.worker.constants import BIDS_SECONDS,\
-    FIRST_PAUSE_SECONDS, PAUSE_SECONDS, BIDS_KEYS_FOR_COPY
+    FIRST_PAUSE_SECONDS, PAUSE_SECONDS, BIDS_KEYS_FOR_COPY, ROUNDS
 from openprocurement.auction.worker.journal import (
     AUCTION_WORKER_DB_GET_DOC,
     AUCTION_WORKER_DB_GET_DOC_ERROR,
@@ -186,6 +186,63 @@ class DBServiceMixin(object):
         self.save_auction_document()
         if not self.debug:
             self.set_auction_and_participation_urls()
+
+
+class WorkerAuditServiceMixin(AuditServiceMixin):
+    """ Mixin class to create, modify and upload audit documents"""
+    def prepare_audit(self):
+        self.audit = {
+            "id": self.auction_doc_id,
+            "auctionId": self._auction_data["data"].get("auctionID", ""),
+            "auction_id": self.tender_id,
+            "items": self._auction_data["data"].get("items", []),
+            "timeline": {
+                "auction_start": {
+                    "initial_bids": []
+                }
+            }
+        }
+        if self.lot_id:
+            self.audit["lot_id"] = self.lot_id
+        for round_number in range(1, ROUNDS + 1):
+            self.audit['timeline']['round_{}'.format(round_number)] = {}
+
+    def approve_audit_info_on_bid_stage(self):
+        turn_in_round = self.current_stage - (
+            self.current_round * (self.bidders_count + 1) - self.bidders_count
+        ) + 1
+        round_label = 'round_{}'.format(self.current_round)
+        turn_label = 'turn_{}'.format(turn_in_round)
+        self.audit['timeline'][round_label][turn_label] = {
+            'time': datetime.now(tzlocal()).isoformat(),
+            'bidder': self.auction_document["stages"][self.current_stage].get('bidder_id', '')
+        }
+        if self.auction_document["stages"][self.current_stage].get('changed', False):
+            self.audit['timeline'][round_label][turn_label]["bid_time"] = self.auction_document["stages"][self.current_stage]['time']
+            self.audit['timeline'][round_label][turn_label]["amount"] = self.auction_document["stages"][self.current_stage]['amount']
+            if self.features:
+                self.audit['timeline'][round_label][turn_label]["amount_features"] = str(
+                    self.auction_document["stages"][self.current_stage].get("amount_features")
+                )
+                self.audit['timeline'][round_label][turn_label]["coeficient"] = str(
+                    self.auction_document["stages"][self.current_stage].get("coeficient")
+                )
+
+    def approve_audit_info_on_announcement(self, approved={}):
+        self.audit['timeline']['results'] = {
+            "time": datetime.now(tzlocal()).isoformat(),
+            "bids": []
+        }
+        for bid in self.auction_document['results']:
+            bid_result_audit = {
+                'bidder': bid['bidder_id'],
+                'amount': bid['amount'],
+                'time': bid['time']
+            }
+            if approved:
+                bid_result_audit["identification"] = approved[bid['bidder_id']].get('tenderers', [])
+                bid_result_audit["owner"] = approved[bid['bidder_id']].get('owner', '')
+            self.audit['timeline']['results']['bids'].append(bid_result_audit)
 
 
 class BiddersServiceMixin(object):
