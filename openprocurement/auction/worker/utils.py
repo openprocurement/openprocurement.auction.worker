@@ -44,12 +44,3 @@ def prepare_bids_stage(exist_stage_params, params={}):
             "uk": ""
         }
     return stage
-
-
-def prepare_service_stage(**kwargs):
-    pause = {
-        "type": "pause",
-        "start": ""
-    }
-    pause.update(kwargs)
-    return pause
