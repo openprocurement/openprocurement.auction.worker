@@ -23,9 +23,6 @@ ENTRY_POINTS = {
     'openprocurement.auction.components': [
         'english = openprocurement.auction.worker.includeme:english_components'
     ],
-    'openprocurement.auction.routes': [
-        'english = openprocurement.auction.worker.includeme:english_routes'
-    ],
     'openprocurement.auction.robottests': [
         'insider = openprocurement.auction.worker.tests.functional.main:includeme'
     ],
