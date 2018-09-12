@@ -3,7 +3,7 @@ from flask import session
 from datetime import datetime, timedelta
 from dateutil.tz import tzlocal
 from mock import MagicMock, patch
-from openprocurement.auction.worker.server import (
+from openprocurement.auction.worker_core.server import (
     _LoggerStream
 )
 

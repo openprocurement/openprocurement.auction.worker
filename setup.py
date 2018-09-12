@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '1.0.2a1.dev6+eauctions'
+VERSION = '1.0.2a3+eauctions'
 
 INSTALL_REQUIRES = [
     'setuptools',
@@ -20,9 +20,8 @@ ENTRY_POINTS = {
     'console_scripts': [
         'auction_worker = openprocurement.auction.worker.cli:main',
     ],
-    'openprocurement.auction.auctions': [
-        'dgfOtherAssets = openprocurement.auction.worker.includeme:dgfOtherAssets',
-        'dgfFinancialAssets = openprocurement.auction.worker.includeme:dgfFinancialAssets',
+    'openprocurement.auction.components': [
+        'english = openprocurement.auction.worker.includeme:english_components'
     ],
     'openprocurement.auction.robottests': [
         'insider = openprocurement.auction.worker.tests.functional.main:includeme'

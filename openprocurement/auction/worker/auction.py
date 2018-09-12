@@ -26,10 +26,17 @@ from openprocurement.auction.worker.journal import (
 )
 from openprocurement.auction.worker.server import run_server
 from openprocurement.auction.executor import AuctionsExecutor
-from openprocurement.auction.worker.mixins import \
-    DBServiceMixin, RequestIDServiceMixin, AuditServiceMixin, \
-    DateTimeServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin, \
-    StagesServiceMixin, ROUNDS, TIMEZONE, InitializeServiceMixin
+from openprocurement.auction.worker.mixins import (
+    DBServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin,
+    StagesServiceMixin, WorkerAuditServiceMixin, InitializeServiceMixin
+)
+from openprocurement.auction.worker_core.mixins import (
+    RequestIDServiceMixin,
+    DateTimeServiceMixin
+)
+from openprocurement.auction.worker_core.constants import TIMEZONE
+from openprocurement.auction.worker.constants import ROUNDS
+
 from openprocurement.auction.worker.utils import \
     prepare_initial_bid_stage, prepare_results_stage
 from openprocurement.auction.utils import (
@@ -50,7 +57,7 @@ SCHEDULER.timezone = TIMEZONE
 class Auction(DBServiceMixin,
               RequestIDServiceMixin,
               InitializeServiceMixin,
-              AuditServiceMixin,
+              WorkerAuditServiceMixin,
               BiddersServiceMixin,
               DateTimeServiceMixin,
               StagesServiceMixin,
