@@ -1,12 +1,12 @@
-import logging
 import json
-import iso8601
-from datetime import datetime, timedelta
+import logging
 from copy import deepcopy
-from dateutil.tz import tzlocal
-from yaml import safe_dump as yaml_dump
-from couchdb.http import HTTPError, RETRYABLE_ERRORS
+from datetime import datetime, timedelta
 from fractions import Fraction
+
+from couchdb.http import HTTPError, RETRYABLE_ERRORS
+from dateutil.tz import tzlocal
+
 from barbecue import cooking
 
 from openprocurement.auction.worker_core.utils import prepare_service_stage

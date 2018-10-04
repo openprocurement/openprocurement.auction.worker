@@ -21,7 +21,6 @@ from openprocurement.auction.worker.tests.data.data import (
 from openprocurement.auction.worker.server import (
     app as worker_app, BidsForm
 )
-# from openprocurement.auction.tests.functional.main import update_auctionPeriod
 
 
 def update_auctionPeriod(data):
@@ -35,8 +34,14 @@ def update_auctionPeriod(data):
 PWD = os.path.dirname(os.path.realpath(__file__))
 
 worker_defaults_file_path = os.path.join(PWD, "../data/auction_worker_defaults.yaml")
-with open(worker_defaults_file_path) as stream:
-    worker_defaults = yaml.load(stream)
+
+
+@pytest.yield_fixture(scope='function')
+def worker_config():
+    update_auctionPeriod(tender_data)
+    with open(worker_defaults_file_path) as stream:
+        worker_defaults = yaml.load(stream)
+    return worker_defaults
 
 
 @pytest.yield_fixture(
@@ -57,13 +62,13 @@ def universal_auction(request):
         lot_id=request.param['lot_id']
     )
 
+
 @pytest.yield_fixture(scope="function")
-def auction():
-    update_auctionPeriod(tender_data)
+def auction(worker_config):
 
     yield Auction(
         tender_id=tender_data['data']['auctionID'],
-        worker_defaults=yaml.load(open(worker_defaults_file_path)),
+        worker_defaults=worker_config,
         auction_data=tender_data,
         lot_id=False
     )
@@ -90,9 +95,9 @@ def features_auction():
 
 
 @pytest.fixture(scope='function')
-def db(request):
-    server = couchdb.Server("http://" + worker_defaults['COUCH_DATABASE'].split('/')[2])
-    name = worker_defaults['COUCH_DATABASE'].split('/')[3]
+def db(request, worker_config):
+    server = couchdb.Server("http://" + worker_config['COUCH_DATABASE'].split('/')[2])
+    name = worker_config['COUCH_DATABASE'].split('/')[3]
 
     def delete():
         del server[name]

@@ -1,9 +1,7 @@
 import logging
 
 from copy import deepcopy
-from urlparse import urljoin
 from datetime import datetime
-from couchdb import Database, Session
 
 from gevent import sleep
 from gevent.event import Event
@@ -12,7 +10,6 @@ from gevent.lock import BoundedSemaphore
 from yaml import safe_dump as yaml_dump
 from requests import Session as RequestsSession
 from dateutil.tz import tzlocal
-from dateutil import parser
 from barbecue import cooking
 from apscheduler.schedulers.gevent import GeventScheduler
 
@@ -29,24 +26,27 @@ from openprocurement.auction.worker.journal import (
 )
 from openprocurement.auction.worker.server import run_server
 from openprocurement.auction.executor import AuctionsExecutor
-from openprocurement.auction.worker_core.constants import TIMEZONE
-from openprocurement.auction.worker.constants import ROUNDS
-from openprocurement.auction.worker.mixins import\
-    DBServiceMixin,\
-    BiddersServiceMixin, PostAuctionServiceMixin,\
+from openprocurement.auction.worker.mixins import (
+    DBServiceMixin, BiddersServiceMixin, PostAuctionServiceMixin,
     StagesServiceMixin, WorkerAuditServiceMixin
+)
 from openprocurement.auction.worker_core.mixins import (
     RequestIDServiceMixin,
-    DateTimeServiceMixin
+    DateTimeServiceMixin,
+    InitializeServiceMixin
 )
+from openprocurement.auction.worker_core.constants import TIMEZONE
+from openprocurement.auction.worker.constants import ROUNDS
+
 from openprocurement.auction.worker.utils import \
     prepare_initial_bid_stage, prepare_results_stage
-from openprocurement.auction.worker.auctions import\
-    simple
-from openprocurement.auction.utils import\
-    get_latest_bid_for_bidder, sorting_by_amount,\
+from openprocurement.auction.utils import (
+    get_latest_bid_for_bidder, sorting_by_amount, check,
     sorting_start_bids_by_amount, delete_mapping, get_tender_data
+)
 
+logging.addLevelName(25, 'CHECK')
+logging.Logger.check = check
 
 LOGGER = logging.getLogger('Auction Worker')
 SCHEDULER = GeventScheduler(job_defaults={"misfire_grace_time": 100},
@@ -57,6 +57,7 @@ SCHEDULER.timezone = TIMEZONE
 
 class Auction(DBServiceMixin,
               RequestIDServiceMixin,
+              InitializeServiceMixin,
               WorkerAuditServiceMixin,
               BiddersServiceMixin,
               DateTimeServiceMixin,
@@ -76,29 +77,18 @@ class Auction(DBServiceMixin,
             self.auction_doc_id = tender_id + "_" + lot_id
         else:
             self.auction_doc_id = tender_id
-        self.tender_url = urljoin(
-            worker_defaults["resource_api_server"],
-            '/api/{0}/{1}/{2}'.format(
-                worker_defaults["resource_api_version"],
-                worker_defaults["resource_name"],
-                tender_id
-            )
-        )
         if auction_data:
             self.debug = True
             LOGGER.setLevel(logging.DEBUG)
             self._auction_data = auction_data
         else:
             self.debug = False
+        self.worker_defaults = worker_defaults
+        self.init_services()
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
-        self.worker_defaults = worker_defaults
-        if self.worker_defaults.get('with_document_service', False):
-            self.session_ds = RequestsSession()
         self._bids_data = {}
-        self.db = Database(str(self.worker_defaults["COUCH_DATABASE"]),
-                           session=Session(retry_delays=range(10)))
         self.audit = {}
         self.retries = 10
         self.bidders_count = 0
