@@ -21,7 +21,11 @@ from openprocurement.auction.worker.tests.data.data import (
 from openprocurement.auction.worker.server import (
     app as worker_app, BidsForm
 )
-# from openprocurement.auction.tests.functional.main import update_auctionPeriod
+
+COUCHDB_HTTP_HOST = os.environ.get('COUCHDB_HTTP_HOST', '127.0.0.1')
+COUCHDB_HTTP_PORT = os.environ.get('COUCHDB_HTTP_PORT', '9000')
+COUCHDB_USER = os.environ.get('COUCHDB_USER', 'admin')
+COUCHDB_PASSWORD = os.environ.get('COUCHDB_PASSWORD', 'zaq1xsw2')
 
 
 def update_auctionPeriod(data):
@@ -32,11 +36,23 @@ def update_auctionPeriod(data):
     data['data']['auctionPeriod']['startDate'] = new_start_time
 
 
+
 PWD = os.path.dirname(os.path.realpath(__file__))
 
 worker_defaults_file_path = os.path.join(PWD, "../data/auction_worker_defaults.yaml")
 with open(worker_defaults_file_path) as stream:
     worker_defaults = yaml.load(stream)
+    if COUCHDB_USER and COUCHDB_PASSWORD:
+        couchdb_template_url = 'http://{0}:{1}@{2}:{3}/database'
+    else:
+        couchdb_template_url = 'http://{2}:{3}/database'
+    worker_defaults['COUCH_DATABASE'] = 'http://{}:{}@{}:{}/database'.format(
+        COUCHDB_USER,
+        COUCHDB_PASSWORD,
+        COUCHDB_HTTP_HOST,
+        COUCHDB_HTTP_PORT
+    )
+
 
 
 @pytest.yield_fixture(
