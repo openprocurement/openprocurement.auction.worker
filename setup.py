@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '0.1.1'
+VERSION = '0.1.2dp'
 
 INSTALL_REQUIRES = [
     'setuptools',
@@ -27,6 +27,8 @@ ENTRY_POINTS = {
         'competitiveDialogueEU.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueEU',
         'competitiveDialogueUA.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueUA',
         'aboveThresholdUA.defense = openprocurement.auction.worker.includeme:aboveThresholdUAdefense',
+        'closeFrameworkAgreementUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementUA',
+        'closeFrameworkAgreementSelectionUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementSelectionUA',
     ],
     'openprocurement.auction.robottests': [
         'auction_test = openprocurement.auction.worker.tests.functional.main:includeme'
