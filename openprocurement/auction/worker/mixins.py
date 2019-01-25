@@ -306,7 +306,7 @@ class BiddersServiceMixin(object):
 class PostAuctionServiceMixin(object):
 
     def put_auction_data(self):
-        if self.worker_defaults.get('with_document_service', False):
+        if self.worker_defaults.get('with_audit', True) and self.worker_defaults.get('with_document_service', False):
             doc_id = self.upload_audit_file_with_document_service()
         else:
             doc_id = self.upload_audit_file_without_document_service()
@@ -322,7 +322,7 @@ class PostAuctionServiceMixin(object):
             else:
                 bids_information = simple.announce_results_data(self, results)
 
-            if doc_id and bids_information:
+            if self.worker_defaults.get('with_audit', True) and doc_id and bids_information:
                 self.approve_audit_info_on_announcement(approved=bids_information)
                 if self.worker_defaults.get('with_document_service', False):
                     doc_id = self.upload_audit_file_with_document_service(doc_id)
