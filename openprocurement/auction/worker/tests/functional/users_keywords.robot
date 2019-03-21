@@ -7,7 +7,7 @@
 
 Підготувати клієнт для користувача
     [Arguments]    ${user_id}
-    Open Browser  http://prozorro.org/    ${BROWSER}  ${user_id}
+    Open Browser  https://prozorro.sale/    ${BROWSER}  ${user_id}
     Set Window Position   @{USERS['${user_id}']['position']}
     Set Window Size       @{USERS['${user_id}']['size']}
 
