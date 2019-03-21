@@ -7,7 +7,7 @@ Library        openprocurement.auction.tests.service_keywords
 
 *** Variables ***
 ${USERS}
-${BROWSER}       phantomjs
+${BROWSER}       chrome
 
 *** Keywords ***
 Підготовка тесту
@@ -20,6 +20,9 @@ ${BROWSER}       phantomjs
     Set Global Variable   ${TENDER}
     ${USERS}=  prepare_users_data   ${TENDER}
     Set Global Variable   ${USERS}
+    ${USERS_ids}=  Convert to List  ${USERS}
+    Log  ${USERS['${USERS_ids[0]}']['login_url']}  WARN
+    Log  ${USERS['${USERS_ids[1]}']['login_url']}  WARN
 
 Залогуватись користувачами
     :FOR    ${user_id}    IN    @{USERS}
