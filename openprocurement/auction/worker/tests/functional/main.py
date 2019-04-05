@@ -13,6 +13,7 @@ import tempfile
 from dateutil.tz import tzlocal
 from pkg_resources import iter_entry_points
 from gevent.subprocess import check_output, sleep
+from uuid import uuid4
 
 from openprocurement.auction.tests.main import update_auctionPeriod
 
@@ -20,15 +21,12 @@ from openprocurement.auction.tests.main import update_auctionPeriod
 PWD = os.path.dirname(os.path.realpath(__file__))
 CWD = os.getcwd()
 
-
 def run_simple(tender_file_path):
-    with open(tender_file_path) as _file:
-        auction_id = json.load(_file).get('data', {}).get('id')
-        if auction_id:
-            with update_auctionPeriod(tender_file_path, auction_type='simple') as auction_file:
-                check_output(TESTS['simple']['worker_cmd'].format(CWD, auction_id, auction_file).split())
+    auction_id = uuid4().hex
+    with update_auctionPeriod(tender_file_path, auction_type='simple') as auction_file:
+        check_output(TESTS['simple']['worker_cmd'].format(CWD, auction_id, auction_file).split())
     sleep(30)
-
+    return auction_id
 
 def run_multilot(tender_file_path):
     with open(tender_file_path) as _file:

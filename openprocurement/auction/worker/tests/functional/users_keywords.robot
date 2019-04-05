@@ -43,13 +43,14 @@
     Highlight Elements With Text On Time    ${last_amount}
     ${last_amount}=     convert_amount_to_number    ${last_amount}
     ${last_amount}=    Evaluate      ${last_amount}-${extra_amount}
+    Очистити поле ставки
     Поставити ставку  ${last_amount}   Надто низька заявка
 
 Поставити ставку
     [Arguments]    ${amount}  ${msg}
     Set To Dictionary    ${USERS['${CURRENT_USER}']}   last_amount=${amount}
     ${input_amount}=   Convert To String  ${amount}
-    Input Text      id=bid-amount-input      ${input_amount}
+    Input Text      name=bid      ${input_amount}
     sleep  1s
     Capture Page Screenshot
     Highlight Elements With Text On Time    Зробити заявку
@@ -57,6 +58,9 @@
     Wait Until Page Contains     ${msg}    10s
     Highlight Elements With Text On Time    ${msg}
     Capture Page Screenshot
+
+Очистити поле ставки
+  Click Element  id=clear-bid-button
 
 Відмінитити ставку
     Highlight Elements With Text On Time   Відмінити заявку
