@@ -34,7 +34,9 @@ def validate_bid_change_on_bidding(form, field):
             raise ValidationError(u'Too high value')
     else:
         minimal_bid = form.document['stages'][stage_id]['amount']
-        if field.data > (minimal_bid - form.document['minimalStep']['amount']):
+        max_allowed = minimal_bid - form.document['minimalStep']['amount']
+        max_allowed = float(str(max_allowed))  # convert floats to more likely values, ex 0.19999999999999996 to 0.2
+        if field.data > max_allowed:
             raise ValidationError(u'Too high value')
 
 
