@@ -125,6 +125,15 @@ class DBServiceMixin(object):
         self.generate_request_id()
         public_document = self.get_auction_document()
 
+        submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
+        prefix = self.worker_defaults.get('PREFIX_NEW_AUCTION', '')
+
+        if prefix and submissionMethodDetails.startswith(prefix):
+            LOGGER.info('Skip tender {} as that tender work with new auctions'.format(
+                self._auction_data['data'].get('id')))
+
+            return
+
         self.auction_document = {}
         if public_document:
             self.auction_document = {"_rev": public_document["_rev"]}
