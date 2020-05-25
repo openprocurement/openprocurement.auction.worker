@@ -124,6 +124,14 @@ class DBServiceMixin(object):
     def prepare_auction_document(self):
         self.generate_request_id()
         public_document = self.get_auction_document()
+        submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
+        prefix = self.worker_defaults.get('PREFIX_NEW_AUCTION', '')
+
+        if prefix and submissionMethodDetails.startswith(prefix):
+            LOGGER.info('Skip tender {} as that tender work with new auctions'.format(
+                self._auction_data['data'].get('id')))
+
+            return
 
         self.auction_document = {}
         if public_document:
@@ -134,7 +142,7 @@ class DBServiceMixin(object):
 
         self.get_auction_info(prepare=True)
         if self.worker_defaults.get('sandbox_mode', False):
-            submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
+
             if submissionMethodDetails == 'quick(mode:no-auction)':
                 if self.lot_id:
                     multilot.post_results_data(self, with_auctions_results=False)
