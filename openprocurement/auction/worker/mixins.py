@@ -125,13 +125,6 @@ class DBServiceMixin(object):
         self.generate_request_id()
         public_document = self.get_auction_document()
 
-        submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
-        prefix = self.worker_defaults.get('PREFIX_NEW_AUCTION', '')
-
-        if prefix and submissionMethodDetails.startswith(prefix):
-            LOGGER.info('Skip tender {} as that tender work with new auctions'.format(self._auction_data.get("id")))
-            return
-
         self.auction_document = {}
         if public_document:
             self.auction_document = {"_rev": public_document["_rev"]}
@@ -141,7 +134,7 @@ class DBServiceMixin(object):
 
         self.get_auction_info(prepare=True)
         if self.worker_defaults.get('sandbox_mode', False):
-
+            submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
             if submissionMethodDetails == 'quick(mode:no-auction)':
                 if self.lot_id:
                     multilot.post_results_data(self, with_auctions_results=False)
@@ -215,7 +208,7 @@ class AuditServiceMixin(object):
             self.audit['timeline'][round_label][turn_label]["amount"] = self.auction_document["stages"][self.current_stage]['amount']
             if self.features:
                 self.audit['timeline'][round_label][turn_label]["amount_features"] = str(
-                      self.auction_document["stages"][self.current_stage].get("amount_features")
+                    self.auction_document["stages"][self.current_stage].get("amount_features")
                 )
                 self.audit['timeline'][round_label][turn_label]["coeficient"] = str(
                     self.auction_document["stages"][self.current_stage].get("coeficient")
