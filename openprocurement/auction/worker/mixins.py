@@ -125,6 +125,15 @@ class DBServiceMixin(object):
         self.generate_request_id()
         public_document = self.get_auction_document()
 
+        self.auction_document = {}
+        if public_document:
+            self.auction_document = {"_rev": public_document["_rev"]}
+        if self.debug:
+            self.auction_document['mode'] = 'test'
+            self.auction_document['test_auction_data'] = deepcopy(self._auction_data)
+
+        self.get_auction_info(prepare=True)
+
         submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
         prefix = self.worker_defaults.get('PREFIX_NEW_AUCTION', '')
 
@@ -134,14 +143,6 @@ class DBServiceMixin(object):
 
             return
 
-        self.auction_document = {}
-        if public_document:
-            self.auction_document = {"_rev": public_document["_rev"]}
-        if self.debug:
-            self.auction_document['mode'] = 'test'
-            self.auction_document['test_auction_data'] = deepcopy(self._auction_data)
-
-        self.get_auction_info(prepare=True)
         if self.worker_defaults.get('sandbox_mode', False):
             submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
             if submissionMethodDetails == 'quick(mode:no-auction)':
