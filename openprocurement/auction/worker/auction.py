@@ -85,7 +85,7 @@ class Auction(DBServiceMixin,
             self.debug = False
 
         if self.debug and not self.worker_defaults.get("PREFIX_NEW_AUCTION"):
-            self.worker_defaults = os.getenv("PREFIX_NEW_AUCTION", "")
+            self.worker_defaults["PREFIX_NEW_AUCTION"] = os.getenv("PREFIX_NEW_AUCTION", "")
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
