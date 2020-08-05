@@ -84,12 +84,12 @@ class Auction(DBServiceMixin,
         else:
             self.debug = False
 
-        if self.debug and not self.worker_defaults.get("PREFIX_NEW_AUCTION"):
-            self.worker_defaults["PREFIX_NEW_AUCTION"] = os.getenv("PREFIX_NEW_AUCTION", "")
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
         self.worker_defaults = worker_defaults
+        if not self.worker_defaults.get("PREFIX_NEW_AUCTION"):
+            self.worker_defaults["PREFIX_NEW_AUCTION"] = os.getenv("PREFIX_NEW_AUCTION", "")
         if self.worker_defaults.get('with_document_service', False):
             self.session_ds = RequestsSession()
         self._bids_data = {}
