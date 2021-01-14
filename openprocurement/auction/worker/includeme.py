@@ -29,6 +29,10 @@ def aboveThresholdUAdefense(components):
     _register(components, 'aboveThresholdUA.defense')
 
 
+def simpledefense(components):
+    _register(components, 'simple.defense')
+
+
 def closeFrameworkAgreementUA(components):
     _register(components, 'closeFrameworkAgreementUA')
 

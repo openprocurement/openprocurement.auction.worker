@@ -27,6 +27,7 @@ ENTRY_POINTS = {
         'competitiveDialogueEU.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueEU',
         'competitiveDialogueUA.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueUA',
         'aboveThresholdUA.defense = openprocurement.auction.worker.includeme:aboveThresholdUAdefense',
+        'simple.defense = openprocurement.auction.worker.includeme:simpledefense',
         'closeFrameworkAgreementUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementUA',
         'closeFrameworkAgreementSelectionUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementSelectionUA',
     ],
