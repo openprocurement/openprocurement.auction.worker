@@ -3,9 +3,8 @@ from flask import session
 from datetime import datetime, timedelta
 from dateutil.tz import tzlocal
 from mock import MagicMock, patch
-from openprocurement.auction.worker.server import (
-    _LoggerStream
-)
+from openprocurement.auction.worker.server import _LoggerStream
+from flask_oauthlib.client import OAuthException
 
 
 def test_logger_stream_write():
@@ -71,6 +70,12 @@ def test_server_login(app):
         session['login_hash'] = u'bd4a790aac32b73e853c26424b032e5a29143d1f'
         session['login_callback'] = 'http://localhost/authorized'
 
+    app.application.remote_oauth.authorize.side_effect = OAuthException("Invalid response")
+    res = app.get('/login?bidder_id=5675acc9232942e8940a034994ad883e&'
+                  'hash=bd4a790aac32b73e853c26424b032e5a29143d1f',
+                  headers=headers)
+    assert res.status == "503 SERVICE UNAVAILABLE"
+
 
 def test_server_authorized(app):
     headers = {
@@ -110,6 +115,10 @@ def test_server_authorized(app):
     assert auctions_loggedin is True
     assert path is True
 
+    app.application.remote_oauth.authorized_response.side_effect = OAuthException("Invalid response")
+    res = app.get('/authorized', headers=headers)
+    assert res.status == "503 SERVICE UNAVAILABLE"
+
 
 def test_server_relogin(app):
     headers = {
@@ -138,6 +147,11 @@ def test_server_relogin(app):
     assert res.status_code == 302
     assert res.status == '302 FOUND'
     assert res.location == 'https://my.test.url'
+
+    app.application.remote_oauth.authorize.side_effect = OAuthException("Invalid response")
+    with patch('openprocurement.auction.worker.server.session', s):
+        res = app.get('/relogin', headers=headers)
+    assert res.status == "503 SERVICE UNAVAILABLE"
 
 
 def test_server_check_authorization(app):

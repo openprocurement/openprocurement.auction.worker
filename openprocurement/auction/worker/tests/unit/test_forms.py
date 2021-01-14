@@ -188,6 +188,32 @@ def test_bids_form(auction, features_auction):
         'bids'
 
 
+def test_bids_form_float(auction):
+    from copy import deepcopy
+
+    # test values
+    bid = 1772091.11
+    step = 23062.86
+    prev_bid = 1795153.97
+
+    #  the problem and the solution
+    assert prev_bid - step == 1772091.1099999999  # not 1772091.11
+    assert str(prev_bid - step) == "1772091.11"
+    assert float(str(prev_bid - step)) == 1772091.11
+
+    # test that validation actually works as the example above
+    form_data = {
+        'bid': bid,
+        'bidder_id': 'f7c8cd1d56624477af8dc3aa9c4b3ea3',
+    }
+    form = BidsForm().from_json(form_data)
+    form.document = deepcopy(test_auction_document)
+    form.document["minimalStep"]["amount"] = step
+    form.document["stages"][-1]["amount"] = prev_bid
+    form.auction = auction
+    assert form.validate() is True
+
+
 def test_form_handler(app):
     app.application.form_handler = form_handler
     headers = {'Content-Type': 'application/json'}

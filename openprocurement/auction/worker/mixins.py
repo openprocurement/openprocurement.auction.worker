@@ -133,6 +133,16 @@ class DBServiceMixin(object):
             self.auction_document['test_auction_data'] = deepcopy(self._auction_data)
 
         self.get_auction_info(prepare=True)
+
+        submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
+        prefix = self.worker_defaults.get('PREFIX_NEW_AUCTION', '')
+
+        if prefix and submissionMethodDetails.startswith(prefix):
+            LOGGER.info('Skip tender {} as that tender work with new auctions'.format(
+                self._auction_data['data'].get('id')))
+
+            return
+
         if self.worker_defaults.get('sandbox_mode', False):
             submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
             if submissionMethodDetails == 'quick(mode:no-auction)':

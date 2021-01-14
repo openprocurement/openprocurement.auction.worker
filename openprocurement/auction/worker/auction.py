@@ -1,4 +1,5 @@
 import logging
+import os
 
 from copy import deepcopy
 from urlparse import urljoin
@@ -82,10 +83,13 @@ class Auction(DBServiceMixin,
             self._auction_data = auction_data
         else:
             self.debug = False
+
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
         self.worker_defaults = worker_defaults
+        if not self.worker_defaults.get("PREFIX_NEW_AUCTION"):
+            self.worker_defaults["PREFIX_NEW_AUCTION"] = os.getenv("PREFIX_NEW_AUCTION", "")
         if self.worker_defaults.get('with_document_service', False):
             self.session_ds = RequestsSession()
         self._bids_data = {}

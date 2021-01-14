@@ -1,9 +1,5 @@
 language: python
 sudo: required
-before_script:
-  - sudo add-apt-repository ppa:chris-lea/libsodium -y
-  - sudo apt-get -qq update
-  - sudo apt-get install libsodium13 -y
 python:
   - "2.7"
 services:
@@ -13,13 +9,13 @@ env:
   global:
     - TZ=Europe/Kiev
 before_install:
-  - pip install python-coveralls
+  - pip install python-coveralls pytest==3.2.3
   - python2 bootstrap.py
   - mv openprocurement/auction/worker/tests/data/auction_worker_travis.yaml openprocurement/auction/worker/tests/data/auction_worker_defaults.yaml
 install:
   - bin/buildout -N
   - curl -X PUT 0.0.0.0:5984/auctions
 script:
-  - bin/pytest
+  - bin/pytest openprocurement/auction/worker/tests/unit/
 after_success:
   - coveralls

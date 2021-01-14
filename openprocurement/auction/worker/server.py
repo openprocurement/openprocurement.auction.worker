@@ -1,4 +1,4 @@
-from flask_oauthlib.client import OAuth
+from flask_oauthlib.client import OAuth, OAuthException
 from flask import Flask, request, jsonify, url_for, session, abort, redirect
 import os
 from urlparse import urljoin
@@ -69,6 +69,11 @@ class AuctionsWSGIHandler(WSGIHandler):
             log.write(self.format_request(), extra=extra)
 
 
+def return_oauth_exception(e):
+    app.logger.warning("Failed auth response {}".format(e))
+    return abort(503)
+
+
 @app.route('/login')
 def login():
     if 'bidder_id' in request.args and 'hash' in request.args:
@@ -82,11 +87,15 @@ def login():
                     )
                 else:
                     callback_url = url_for('authorized', next=next_url, _external=True)
-                response = app.remote_oauth.authorize(
-                    callback=callback_url,
-                    bidder_id=request.args['bidder_id'],
-                    hash=request.args['hash']
-                )
+
+                try:
+                    response = app.remote_oauth.authorize(
+                        callback=callback_url,
+                        bidder_id=request.args['bidder_id'],
+                        hash=request.args['hash']
+                    )
+                except OAuthException as e:
+                    return return_oauth_exception(e)
                 if 'return_url' in request.args:
                     session['return_url'] = request.args['return_url']
                 session['login_bidder_id'] = request.args['bidder_id']
@@ -100,7 +109,10 @@ def login():
 @app.route('/authorized')
 def authorized():
     if not('error' in request.args and request.args['error'] == 'access_denied'):
-        resp = app.remote_oauth.authorized_response()
+        try:
+            resp = app.remote_oauth.authorized_response()
+        except OAuthException as e:
+            return return_oauth_exception(e)
         if resp is None or hasattr(resp, 'data'):
             app.logger.info("Error Response from Oauth: {}".format(resp))
             return abort(403, 'Access denied')
@@ -138,12 +150,16 @@ def relogin():
         app.logger.info("Bidder {} with login_hash {} start re-login".format(
                         session['login_bidder_id'], session['login_hash'],
                         ), extra=prepare_extra_journal_fields(request.headers))
-        return app.remote_oauth.authorize(
-            callback=session['login_callback'],
-            bidder_id=session['login_bidder_id'],
-            hash=session['login_hash'],
-            auto_allow='1'
-        )
+        try:
+            resp = app.remote_oauth.authorize(
+                callback=session['login_callback'],
+                bidder_id=session['login_bidder_id'],
+                hash=session['login_hash'],
+                auto_allow='1'
+            )
+        except OAuthException as e:
+            return return_oauth_exception(e)
+        return resp
     return redirect(
         urljoin(request.headers['X-Forwarded-Path'], '.').rstrip('/')
     )
