@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '0.1.5dp'
+VERSION = '0.1.6.1dp'
 
 INSTALL_REQUIRES = [
     'setuptools',
