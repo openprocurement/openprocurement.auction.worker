@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '0.1.6.1dp'
+VERSION = '0.1.7dp'
 
 INSTALL_REQUIRES = [
     'setuptools',
@@ -55,6 +55,7 @@ setup(name='openprocurement.auction.worker',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['openprocurement', 'openprocurement.auction'],
       include_package_data=True,
+      package_data={'openprocurement.auction.worker': ['*.json']},
       zip_safe=False,
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
