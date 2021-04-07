@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-VERSION = '0.1.1'
+VERSION = '0.1.7dp'
 
 INSTALL_REQUIRES = [
     'setuptools',
@@ -27,6 +27,9 @@ ENTRY_POINTS = {
         'competitiveDialogueEU.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueEU',
         'competitiveDialogueUA.stage2 = openprocurement.auction.worker.includeme:competitiveDialogueUA',
         'aboveThresholdUA.defense = openprocurement.auction.worker.includeme:aboveThresholdUAdefense',
+        'simple.defense = openprocurement.auction.worker.includeme:simpledefense',
+        'closeFrameworkAgreementUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementUA',
+        'closeFrameworkAgreementSelectionUA = openprocurement.auction.worker.includeme:closeFrameworkAgreementSelectionUA',
     ],
     'openprocurement.auction.robottests': [
         'auction_test = openprocurement.auction.worker.tests.functional.main:includeme'
@@ -52,6 +55,7 @@ setup(name='openprocurement.auction.worker',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['openprocurement', 'openprocurement.auction'],
       include_package_data=True,
+      package_data={'openprocurement.auction.worker': ['*.json']},
       zip_safe=False,
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,

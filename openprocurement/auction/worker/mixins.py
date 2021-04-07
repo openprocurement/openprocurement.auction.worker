@@ -34,6 +34,7 @@ from openprocurement.auction.worker.journal import (
     AUCTION_WORKER_SERVICE_START_STAGE,
     AUCTION_WORKER_SERVICE_START_NEXT_STAGE,
 )
+from openprocurement.auction.worker.deprecated_auction_config_filter import is_tender_processed_by_auction
 
 
 LOGGER = logging.getLogger("Auction Worker")
@@ -133,6 +134,13 @@ class DBServiceMixin(object):
             self.auction_document['test_auction_data'] = deepcopy(self._auction_data)
 
         self.get_auction_info(prepare=True)
+
+        if not is_tender_processed_by_auction(self._auction_data['data'], auction_type="deprecated"):
+            LOGGER.info('Skip tender {} as that tender work with new auctions'.format(
+                self._auction_data['data'].get('id')))
+
+            return
+
         if self.worker_defaults.get('sandbox_mode', False):
             submissionMethodDetails = self._auction_data['data'].get('submissionMethodDetails', '')
             if submissionMethodDetails == 'quick(mode:no-auction)':

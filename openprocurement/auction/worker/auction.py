@@ -82,6 +82,7 @@ class Auction(DBServiceMixin,
             self._auction_data = auction_data
         else:
             self.debug = False
+
         self._end_auction_event = Event()
         self.bids_actions = BoundedSemaphore()
         self.session = RequestsSession()
